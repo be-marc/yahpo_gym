@@ -12,13 +12,13 @@ if pypi_operations:
 with open(path.join(here, 'README.md'), encoding='utf-8') as fh:
     long_description = fh.read()
 
-__version__ = None
-exec(open('module_template/about.py').read())
-if __version__ is None:
-    raise IOError('about.py in project lacks __version__!')
+# __version__ = None
+# exec(open('yahpo_gym/about.py').read())
+# if __version__ is None:
+#     raise IOError('about.py in project lacks __version__!')
 
 setup(name='yahpo_gym',
-      version=__version__,
+      version='0.0.0',
       author='Florian Pfisterer',
       description='Inference module for the yahpo gym',
       long_description=long_description,
