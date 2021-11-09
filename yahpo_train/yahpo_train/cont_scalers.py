@@ -28,10 +28,11 @@ class ContTransformerRange(nn.Module):
     Transformer for Continuous Variables.
     Transforms to [p,1-p].
     """
-    def __init__(self, x, p=0.01):
+    def __init__(self, x, p=0):
         super().__init__()
         self.p = torch.as_tensor(p)
-        self.min, self.max = torch.min(x[~torch.isnan(x)]), torch.max(x[~torch.isnan(x)])
+        # self.min, self.max = torch.min(x[~torch.isnan(x)]), torch.max(x[~torch.isnan(x)])
+        self.min, self.max = torch.as_tensor(0.).to(torch.double), torch.as_tensor(1.).to(torch.double)
         if self.max == self.min:
             raise Exception("Constant feature detected!")
         
@@ -56,18 +57,19 @@ class ContTransformerNegExpRange(nn.Module):
     Log-Transformer for Continuous Variables.
     Transforms to [p,1-p] after applying a neg-exp transform
     """
-    def __init__(self, x, p=0.01, scale=True, q=1.):
+    def __init__(self, x, p=0., scale=True, q=1.):
         self.p = torch.as_tensor(p)
         self.scale = scale
         super().__init__()
         
-        self.max = torch.as_tensor(1.).to(torch.double)
+        self.qmax = torch.as_tensor(1.).to(torch.double)
         if scale:
-            self.max = max(torch.quantile(x[~torch.isnan(x)],q=q).to(torch.double), self.max)
+            self.qmax = max(torch.quantile(x[~torch.isnan(x)],q=q).to(torch.double), self.qmax)
 
-        x = x.to(torch.double) / self.max
+        x = x.to(torch.double) / self.qmax
         x = torch.exp(-x)
-        self.min, self.max = torch.min(x[~torch.isnan(x)]), torch.max(x[~torch.isnan(x)])
+        # self.min, self.max = torch.min(x[~torch.isnan(x)]), torch.max(x[~torch.isnan(x)])
+        self.min, self.max = torch.as_tensor(0.).to(torch.double), torch.as_tensor(1.).to(torch.double)
         if self.max == self.min:
             raise Exception("Constant feature detected!")
         
@@ -106,7 +108,8 @@ class ContTransformerLogRange(nn.Module):
         super().__init__()
 
         x = self.logfun(x + self.eps)
-        self.min, self.max = torch.min(x[~torch.isnan(x)]), torch.max(x[~torch.isnan(x)])
+        # self.min, self.max = torch.min(x[~torch.isnan(x)]), torch.max(x[~torch.isnan(x)])
+        self.min, self.max = torch.as_tensor(0.).to(torch.double), torch.as_tensor(1.).to(torch.double)
         if self.max == self.min:
             raise Exception("Constant feature detected!")
         

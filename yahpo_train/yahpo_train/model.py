@@ -116,7 +116,18 @@ class SurrogateTabularLearner(Learner):
         return f"{self.wide} \n {self.deep}  \n {self.deeper}"
 
 
+class SigmoidRange(nn.Module):
+    def __init__(self, x):
+        super().__init__()
+        high, low = torch.max(torch.from_numpy(x.values).float()), torch.min(torch.from_numpy(x.values).float())
+        if high == low:
+            raise Exception("Constant vector")
+        self.high = high
+        self.low  = low
 
+    def forward(self, x):
+        return torch.sigmoid(x) * (self.high - self.low) + self.low
+        
 class FFSurrogateModel(nn.Module):
     def __init__(self, dls, emb_szs = None, layers = [400, 400], deeper = [400, 400, 400], wide = True, use_bn = False, ps=0.1, act_cls=nn.SELU(inplace=True), final_act = nn.Sigmoid(), lin_first=False, embds_dbl=None, embds_tgt=None):
         super().__init__()
@@ -142,6 +153,7 @@ class FFSurrogateModel(nn.Module):
         self.sizes = [self.n_emb + self.n_cont] + layers + [dls.ys.shape[1]]
 
         self.deep, self.deeper, self.wide = nn.Sequential(), nn.Sequential(), nn.Sequential()
+        
         # Deep Part
         if len(layers):
             ps1 = [ps for i in layers]
@@ -162,7 +174,7 @@ class FFSurrogateModel(nn.Module):
         if wide:
             self.wide = nn.Sequential(nn.Linear(self.sizes[0], self.sizes[-1]))
 
-        self.final_act = final_act
+        self.final_act = nn.ModuleList([SigmoidRange(cont) for name, cont in dls.ys.iteritems()])
         
     def forward(self, x_cat, x_cont=None, invert_ytrafo = True):
         if self.n_emb != 0:
@@ -181,7 +193,10 @@ class FFSurrogateModel(nn.Module):
         if len(self.deeper):
             xs = xs.add(self.deeper(x))
 
-        y = self.final_act(xs)
+        # Apply sigmoid range
+        y = [smr(xs[:,i]).unsqueeze(1) for i,smr in enumerate(self.final_act)]
+        y = torch.cat(y, 1)
+        
         if invert_ytrafo:
             return self.inv_trafo_ys(y)
         else:
