@@ -117,13 +117,15 @@ class SurrogateTabularLearner(Learner):
 
 
 class SigmoidRange(nn.Module):
-    def __init__(self, x):
+    def __init__(self, x, qm = 0.01):
         super().__init__()
-        high, low = torch.max(torch.from_numpy(x.values).float()), torch.min(torch.from_numpy(x.values).float())
+        x = torch.from_numpy(x.values).float()
+        high, low = torch.max(x), torch.min(x)
+        qs = torch.quantile(x, q = torch.Tensor([qm, 1-qm]))
         if high == low:
             raise Exception("Constant vector")
-        self.high = high
-        self.low  = low
+        self.high = high + torch.abs(high - qs[1])
+        self.low  = low  - torch.abs(low  - qs[0])
 
     def forward(self, x):
         return torch.sigmoid(x) * (self.high - self.low) + self.low

@@ -7,7 +7,7 @@ from fastai.callback.wandb import *
 from functools import partial
 import wandb
 
-def fit_config(key, embds_dbl=None, embds_tgt=None, tfms=None, lr = 1e-4, epochs=50, deep=[512,512,256], deeper=[], dropout=0.5, wide=True, use_bn=False, frac=1., bs=2048, mixup = False, export=False, log_wandb=True, wandb_entity='mfsurrogates', cbs = []):
+def fit_config(key, embds_dbl=None, embds_tgt=None, tfms=None, lr = 1e-4, epochs=50, deep=[1024,512,256], deeper=[], dropout=0., wide=True, use_bn=False, frac=1., bs=2048, mixup=True, export=False, log_wandb=True, wandb_entity='mfsurrogates', cbs = []):
     """
     Fit function with hyperparameters
     """
@@ -206,7 +206,7 @@ def fit_taskset(key='taskset', **kwargs):
     # Transforms
     tfms = {}
     [tfms.update({k:ContTransformerRange}) for k in ['replication']]
-    [tfms.update({k:partial(ContTransformerLogRange, logfun=torch.log2,  expfun=torch.exp2 )}) for k in ["epoch"]]
+    [tfms.update({k:partial(ContTransformerLogRange, logfun=torch.log2, expfun=torch.exp2)}) for k in ["epoch"]]
     [tfms.update({k:partial(ContTransformerLogRange, logfun=torch.log,  expfun=torch.exp)}) for k in ["learning_rate", 'beta1', 'beta2', 'epsilon', 'l1', 'l2', 'linear_decay', 'exponential_decay']]
     [tfms.update({k:partial(ContTransformerNegExpRange, q=.99)}) for k in ["train", "valid1", "valid2", "test"]]
     return fit_config(key, tfms=tfms, **kwargs)
@@ -216,13 +216,14 @@ def fit_taskset(key='taskset', **kwargs):
 if __name__ == '__main__':
     wandb.login()
     # fit_nb301(dropout=.0) # Done
-    tune_config(fit_rbv2_rpart, "tune_rpart")
+    # tune_config(fit_rbv2_rpart, "tune_rpart")
+    # fit_rbv2_rpart(export=True)
     # fit_rbv2_super()
     # fit_rbv2_svm()
     # fit_rbv2_xgboost()
     # fit_lcbench(export=True)
     # fit_rbv2_ranger()    
-    # fit_rbv2_glmnet()
+    fit_rbv2_glmnet(deep = [512, 512, 256], lr=5*1e-4, mixup=False)
     # fit_rbv2_aknn(export=True)
     # fit_fcnet()
     # fit_taskset(export=True)
