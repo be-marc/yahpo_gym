@@ -136,3 +136,9 @@ Pipfile.lock
 
 *.db
 *.toml
+
+.Renviron
+.Rprofile
+attic
+renv.lock
+renv
