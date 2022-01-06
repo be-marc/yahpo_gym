@@ -48,7 +48,7 @@ class BenchmarkSet():
         if self.active_session or (session is not None):
             self.set_session(session, multithread=multithread)
 
-    def objective_function(self, configuration: Union[Dict, List[Dict]], logging: bool = False, multithread: bool = True):
+    def objective_function(self, configuration: Union[Dict, List[Dict]], logging: bool = False, multithread: bool = True, timedate: bool = False):
         """
         Evaluate the surrogate for a given configuration.
 
@@ -63,6 +63,8 @@ class BenchmarkSet():
             Should the ONNX session be allowed to leverage multithreading capabilities?
             Initialized to `True` but on some HPC clusters it may be needed to set this to `False`, depending on your setup.
             Only relevant if no active session has been set.
+        timdedate: bool
+            Should timestamp be returned?
         """
         if not self.active_session:
             self.set_session(multithread=multithread)
@@ -77,10 +79,12 @@ class BenchmarkSet():
         if logging:
             timedate = time.strftime("%D|%H:%M:%S", time.localtime())
             self.archive.append({'time':timedate, 'x':configuration, 'y':results_dict})
+        if timedate:
+            results_dict['timedate'] = time.strftime("%D|%H:%M:%S", time.localtime())
 
         return results_dict
 
-    def objective_function_timed(self, configuration: Union[Dict, List[Dict]], logging: bool = False):
+    def objective_function_timed(self, configuration: Union[Dict, List[Dict]], logging: bool = False, timedate: bool = False):
         """
         Evaluate the surrogate for a given configuration and sleep for quant * predicted runtime.
         Note, that this assumes that the predicted runtime is in seconds.
@@ -92,9 +96,11 @@ class BenchmarkSet():
             Attention: `configuration` is not checked for internal validity for speed purposes.
         logging: bool
             Should the evaluation be logged in the `archive`? Initialized to `False`.
+        timdedate: bool
+            Should timestamp be returned?
         """
         start_time = time.time()
-        results = self.objective_function(configuration)
+        results = self.objective_function(configuration, timedate = timedate)
         rt = results[self.config.runtime_name]
         offset = time.time() - start_time
         sleepit = max(rt - offset, 0) * self.quant
