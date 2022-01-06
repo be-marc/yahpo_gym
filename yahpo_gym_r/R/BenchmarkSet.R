@@ -65,13 +65,15 @@ BenchmarkSet = R6::R6Class("BenchmarkSet",
     #'   Should the ONNX session be allowed to leverage multithreading capabilities? Default `FALSE`.
     #' @param check `logical` \cr
     #'   Check inputs for validity before passing to surrogate model? Default `FALSE`.
-    initialize = function(key, onnx_session = NULL, active_session = FALSE, download = FALSE, multithread = FALSE, check = FALSE) {
+    initialize = function(key, onnx_session = NULL, active_session = FALSE, download = FALSE, multithread = FALSE,
+      check = FALSE, quant = 0.1) {
       self$id = assert_string(key)
       self$onnx_session = onnx_session
       self$active_session = assert_flag(active_session)
       self$download = assert_flag(download)
       self$multithread = assert_flag(multithread)
       self$check = assert_flag(check)
+      private$.quant = assert_number(quant)
       # Download files
       if (assert_flag(download)) {
         self$py_instance$config$download_files(files = list("param_set.R"))
@@ -105,7 +107,7 @@ BenchmarkSet = R6::R6Class("BenchmarkSet",
         multifidelity,
         list(
           config_id = self$id, session = self$onnx_session, sactive_session = self$active_session, 
-          download = self$download, check = self$check
+          download = self$download, check = self$check, quant = self$quant
         ),
         self$domain,
         self$codomain,
@@ -212,13 +214,15 @@ BenchmarkSet = R6::R6Class("BenchmarkSet",
       private$.load_r_domains()$codomain
     },
     #' @field quant `numeric` \cr
-    #' Multiply runtime by this factor. Defaults to 0.01.
+    #' Multiply runtime by this factor. Defaults to 0.1.
     quant = function(val) {
       if (missing(val)) {
-        return(quant)
+        return(self$py_instance$quant)
       }
-      assert_number(quant)
-      self$py_instance$quant = val
+      assert_number(val)
+      private$.quant = val
+      if (is.null(private$.py_instance)) self$py_instance else private$.py_instance$quant = val
+      invisible(NULL)
     },
 
     #' @field py_instance [`BenchmarkSet`] \cr
@@ -228,7 +232,7 @@ BenchmarkSet = R6::R6Class("BenchmarkSet",
         gym = reticulate::import("yahpo_gym")
         private$.py_instance = gym$benchmark_set$BenchmarkSet(
           config_id = self$id, session = self$onnx_session, active_session = self$active_session,
-          download = self$download, multithread = self$multithread#, check = self$check
+          download = self$download, multithread = self$multithread, quant = private$.quant#, check = self$check
         )
       }
       return(private$.py_instance)
@@ -247,6 +251,8 @@ BenchmarkSet = R6::R6Class("BenchmarkSet",
         private$.domains = list(search_space = search_space, domain = domain, codomain = codomain)
       }
       private$.domains
-    }
+    },
+
+    .quant = NULL
   )
 )
