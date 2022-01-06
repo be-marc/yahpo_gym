@@ -5,13 +5,14 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
     logging = NULL,
     timedate = NULL,
 
-    initialize = function(instance, multifidelity = TRUE, py_instance_args, domain, codomain = NULL, check_values = TRUE, timed = FALSE, logging = FALSE, timedate = TRUE) {
+    initialize = function(instance, multifidelity = TRUE, py_instance_args, domain, codomain = NULL, check_values = TRUE, timed = FALSE, logging = FALSE, timedate = TRUE, multithread = FALSE) {
       assert_flag(multifidelity)
       assert_flag(check_values)
-      self$logging = assert_flag(logging)
       self$timed = assert_flag(timed)
+      self$logging = assert_flag(logging)
       self$timedate = assert_flag(timedate)
-      
+      assert_flag(multithread)
+
       if (is.null(codomain)) {
         codomain = ps(y = p_dbl(tags = "minimize"))
       }
@@ -40,6 +41,12 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
           cst$add(domain$params[[fidelity_param]])
           cst$values = insert_named(cst$values, y = setNames(list(domain$params[[fidelity_param]]$upper), nm = fidelity_param))
         }
+      }
+
+      if (self$timed) {
+        fun = function(xs, ...) {self$py_instance$objective_function_timed(preproc_xs(xs, ...), logging = logging, multithread = multithread)[self$codomain$ids()]}
+      } else {
+        fun = function(xs, ...) {self$py_instance$objective_function(preproc_xs(xs, ...), logging = logging, multithread = multithread)[self$codomain$ids()]}
       }
 
       # asserts id, domain, codomain, properties
