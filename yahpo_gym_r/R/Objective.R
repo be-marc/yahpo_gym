@@ -3,12 +3,14 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
   public = list(
     timed = NULL,
     logging = NULL,
+    timedate = NULL,
 
-    initialize = function(instance, multifidelity = TRUE, py_instance_args, domain, codomain = NULL, check_values = TRUE, timed = FALSE, logging = FALSE) {
+    initialize = function(instance, multifidelity = TRUE, py_instance_args, domain, codomain = NULL, check_values = TRUE, timed = FALSE, logging = FALSE, timedate = TRUE) {
       assert_flag(multifidelity)
       assert_flag(check_values)
       self$logging = assert_flag(logging)
       self$timed = assert_flag(timed)
+      self$timedate = assert_flag(timedate)
       
       if (is.null(codomain)) {
         codomain = ps(y = p_dbl(tags = "minimize"))
@@ -71,10 +73,12 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
       private$.fun = NULL
     },
     .set_fun = function() {
+      ids = self$codomain$ids()
+      if (self$timedate) ids = c(ids, "timedate")
       if (self$timed) {
-        private$.fun = function(xs, ...) {self$py_instance$objective_function_timed(preproc_xs(xs, ...), logging = self$logging)[self$codomain$ids()]}
+        private$.fun = function(xs, ...) {self$py_instance$objective_function_timed(preproc_xs(xs, ...), logging = self$logging, timedate = self$timedate)[ids]}
       } else {
-        private$.fun = function(xs, ...) {self$py_instance$objective_function(preproc_xs(xs, ...), logging = self$logging)[self$codomain$ids()]}
+        private$.fun = function(xs, ...) {self$py_instance$objective_function(preproc_xs(xs, ...), logging = self$logging, timedate = self$timedate)[ids]}
       }
     }
   ),

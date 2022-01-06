@@ -87,7 +87,7 @@ BenchmarkSet = R6::R6Class("BenchmarkSet",
     #' @return
     #'  A [`Objective`][bbotk::Objective] containing "domain", "codomain" and a
     #'  functionality to evaluate the surrogates.
-    get_objective = function(instance, multifidelity = TRUE, check_values = TRUE, timed = FALSE, logging = FALSE) {
+    get_objective = function(instance, multifidelity = TRUE, check_values = TRUE, timed = FALSE, logging = FALSE, timedate = TRUE) {
       assert_choice(instance, self$instances)
       assert_flag(check_values)
       ObjectiveYAHPO$new(
@@ -100,7 +100,8 @@ BenchmarkSet = R6::R6Class("BenchmarkSet",
         self$domain,
         self$codomain,
         check_values = check_values,
-        timed = timed
+        timed = timed,
+        timedate = timedate
       )
     },
     #' @description
