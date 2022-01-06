@@ -49,7 +49,7 @@ class BenchmarkSet():
         if self.active_session or (session is not None):
             self.set_session(session, multithread=multithread)
 
-    def objective_function(self, configuration: Union[Dict, List[Dict]], logging: bool = False, multithread: bool = True, timedate: bool = False):
+    def objective_function(self, configuration: Union[Dict, List[Dict]], logging: bool = False, timedate: bool = False, multithread: bool = True):
         """
         Evaluate the surrogate for a given configuration.
 
