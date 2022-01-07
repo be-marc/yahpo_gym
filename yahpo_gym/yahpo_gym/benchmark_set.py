@@ -67,7 +67,7 @@ class BenchmarkSet():
         timdedate: bool
             Should timestamp be returned?
         """
-        if not self.active_session:
+        if not self.active_session or self.session is None:
             self.set_session(multithread=multithread)
 
         x_cont, x_cat = self._config_to_xs(configuration)
@@ -83,7 +83,8 @@ class BenchmarkSet():
         if timedate:
             results_dict['timedate'] = time.strftime("%D|%H:%M:%S", time.localtime())
             
-        del self.session # Drop session to avoid memory leaks
+        if not self.active_session:
+            self.session = None
 
         return results_dict
 
