@@ -82,6 +82,8 @@ class BenchmarkSet():
             self.archive.append({'time':timedate, 'x':configuration, 'y':results_dict})
         if timedate:
             results_dict['timedate'] = time.strftime("%D|%H:%M:%S", time.localtime())
+            
+        del self.session # Drop session to avoid memory leaks
 
         return results_dict
 

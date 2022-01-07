@@ -4,6 +4,7 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
     timed = NULL,
     logging = NULL,
     timedate = NULL,
+    multithread = NULL,
 
     initialize = function(instance, multifidelity = TRUE, py_instance_args, domain, codomain = NULL, check_values = TRUE, timed = FALSE, logging = FALSE, timedate = TRUE, multithread = FALSE) {
       assert_flag(multifidelity)
@@ -11,8 +12,7 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
       self$timed = assert_flag(timed)
       self$logging = assert_flag(logging)
       self$timedate = assert_flag(timedate)
-      assert_flag(multithread)
-
+      self$multithread = assert_flag(multithread)
       if (is.null(codomain)) {
         codomain = ps(y = p_dbl(tags = "minimize"))
       }
@@ -43,12 +43,6 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
         }
       }
 
-      if (self$timed) {
-        fun = function(xs, ...) {self$py_instance$objective_function_timed(preproc_xs(xs, ...), logging = logging, multithread = multithread)[self$codomain$ids()]}
-      } else {
-        fun = function(xs, ...) {self$py_instance$objective_function(preproc_xs(xs, ...), logging = logging, multithread = multithread)[self$codomain$ids()]}
-      }
-
       # asserts id, domain, codomain, properties
       super$initialize(
         id = paste0("YAHPO_", py_instance_args$config_id),
@@ -68,6 +62,9 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
       res = invoke(private$.fun, xs, .args = self$constants$values)
       if (self$check_values) self$codomain$assert(as.list(res)[self$codomain$ids()])
       return(res)
+    },
+    export = function() {
+      private$.export()
     }
   ),
 
@@ -75,17 +72,19 @@ ObjectiveYAHPO = R6::R6Class("ObjectiveYAHPO",
     .fun = NULL,
     .py_instance = NULL,
     .py_instance_args = NULL,
-    .drop_py_instances = function() {
+    .export = function() {
       private$.py_instance = NULL
       private$.fun = NULL
+      private$.py_instance_args$onnx_session = NULL
+      private$.py_instance_args$active_session = FALSE
     },
     .set_fun = function() {
       ids = self$codomain$ids()
       if (self$timedate) ids = c(ids, "timedate")
       if (self$timed) {
-        private$.fun = function(xs, ...) {self$py_instance$objective_function_timed(preproc_xs(xs, ...), logging = self$logging, timedate = self$timedate)[ids]}
+        private$.fun = function(xs, ...) {self$py_instance$objective_function_timed(preproc_xs(xs, ...), logging = self$logging, timedate = self$timedate, multithread = self$multithread)[ids]}
       } else {
-        private$.fun = function(xs, ...) {self$py_instance$objective_function(preproc_xs(xs, ...), logging = self$logging, timedate = self$timedate)[ids]}
+        private$.fun = function(xs, ...) {self$py_instance$objective_function(preproc_xs(xs, ...), logging = self$logging, timedate = self$timedate, multithread = self$multithread)[ids]}
       }
     }
   ),
