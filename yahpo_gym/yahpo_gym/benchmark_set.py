@@ -113,6 +113,8 @@ class BenchmarkSet():
         offset = time.time() - start_time
         sleepit = max(rt - offset, 0) * self.quant
         time.sleep(sleepit)
+        if timedate:
+            results['timedate'] = time.strftime("%D|%H:%M:%S", time.localtime())
         return results
 
     def set_constant(self, param: str, value = None):
